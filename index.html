@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Scale</title>
+  <link rel="icon" href="assets/slime.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <section class="preview" id="preview">
+      <div class="preview-top">
+        <p class="brand">
+          <img src="assets/slime.png" alt="" width="32" height="32">
+          <span>Pixel Scale</span>
+        </p>
+        <label class="view">
+          <span id="view-value">1×</span>
+          <input id="view-range" type="range" min="0" max="18" step="1" value="9" aria-label="View" aria-valuetext="1×">
+        </label>
+      </div>
+      <div class="stage empty" id="stage">
+        <div class="stage-scroll">
+          <div class="empty" id="empty">
+            <p class="drop-title">Drop an image here</p>
+            <p class="or">or</p>
+            <button type="button" class="choose" id="choose">Choose file</button>
+            <p class="formats">One PNG, JPEG, WebP, or GIF</p>
+          </div>
+          <div class="checker" id="checker" hidden>
+            <img id="preview-img" alt="">
+          </div>
+        </div>
+        <p class="size-label" id="size-label" hidden></p>
+        <div class="popup" id="popup" hidden>
+          <div class="popup-head">
+            <strong id="popup-name"></strong>
+            <button type="button" id="popup-close">Close</button>
+          </div>
+          <p id="popup-message"></p>
+        </div>
+        <div class="gauge" id="gauge" hidden>
+          <div id="gauge-fill"></div>
+        </div>
+      </div>
+    </section>
+    <aside class="settings">
+      <div>
+        <h2>Input</h2>
+        <p class="no-file" id="no-file">No file</p>
+        <div class="card" id="card" hidden>
+          <div class="thumb" id="thumb">
+            <img id="thumb-img" alt="" hidden>
+          </div>
+          <div class="card-text">
+            <p class="card-name" id="card-name"></p>
+            <p class="card-meta" id="card-meta"></p>
+          </div>
+          <button type="button" class="replace" id="replace">Replace</button>
+        </div>
+      </div>
+      <div>
+        <h2>Size</h2>
+        <div class="segment" role="group" aria-label="Size">
+          <button type="button" id="mode-scale" aria-pressed="true">Scale</button>
+          <button type="button" id="mode-pixels" aria-pressed="false">Pixels</button>
+        </div>
+        <label class="field" id="scale-field">
+          <span>×</span>
+          <input id="scale-input" inputmode="decimal" value="2" aria-label="Scale" autocomplete="off">
+        </label>
+        <div class="pixel-block" id="pixel-block" hidden>
+          <div class="pixel-row">
+            <div class="segment slim" role="group" aria-label="Edge">
+              <button type="button" id="edge-width" aria-pressed="true">Width</button>
+              <button type="button" id="edge-height" aria-pressed="false">Height</button>
+            </div>
+            <label class="field" id="pixel-field">
+              <span>px</span>
+              <input id="pixel-input" inputmode="decimal" aria-label="Width" autocomplete="off">
+            </label>
+          </div>
+          <p class="derived" id="derived" hidden></p>
+        </div>
+      </div>
+      <div class="files">
+        <h2>Files</h2>
+        <div class="file-list" id="file-list"></div>
+      </div>
+      <button type="button" class="download" id="download" disabled>Download PNG</button>
+    </aside>
+  </div>
+  <input id="pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+  <input id="replace-pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" hidden>
+  <div class="menu" id="file-menu" hidden role="menu">
+    <button type="button" id="file-delete" role="menuitem">Delete</button>
+  </div>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="scale.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
