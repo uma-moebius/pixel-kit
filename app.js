@@ -471,8 +471,13 @@
         { label: "Before/After", key: "B", check: state.compare, run: toggleCompare },
         { label: "Toggle files pane", key: IS_MAC ? "\u2318\\" : "Ctrl+\\", run: toggleFiles },
         "-",
-        { group: "Theme" },
-        ...THEMES.map((id) => ({ label: "Theme: " + id[0].toUpperCase() + id.slice(1), check: themePref() === id, run: () => setTheme(id) })),
+        { group: "Appearance \u00b7 " + shiftMod("L") },
+        ...THEMES.map((id) => ({
+          label: id[0].toUpperCase() + id.slice(1),
+          radio: true,
+          check: themePref() === id,
+          run: () => setTheme(id),
+        })),
       ];
     }
     if (name === "all") {
@@ -506,7 +511,7 @@
       }
       const button = document.createElement("button");
       button.type = "button";
-      button.setAttribute("role", item.check === undefined ? "menuitem" : "menuitemcheckbox");
+      button.setAttribute("role", item.check === undefined ? "menuitem" : item.radio ? "menuitemradio" : "menuitemcheckbox");
       if (item.check !== undefined) button.setAttribute("aria-checked", item.check ? "true" : "false");
       if (item.disabled) button.setAttribute("aria-disabled", "true");
       const label = document.createElement("span");
@@ -688,28 +693,41 @@
   }
 
   // ---------- theme ----------
+  // "light" / "dark" set data-theme on <html> and are stored as pk-theme.
+  // "system" removes both; CSS then follows prefers-color-scheme.
 
-  const THEMES = ["system", "light", "dark"];
-  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const THEMES = ["light", "dark", "system"];
+  let themeNoteTimer = 0;
 
   function themePref() {
-    const value = localStorage.getItem("pk.theme");
-    return THEMES.includes(value) ? value : "system";
-  }
-
-  function applyTheme() {
-    const pref = themePref();
-    const dark = pref === "dark" || (pref === "system" && darkQuery.matches);
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    try {
+      const value = localStorage.getItem("pk-theme");
+      return value === "light" || value === "dark" ? value : "system";
+    } catch (error) {
+      return "system";
+    }
   }
 
   function setTheme(pref) {
-    localStorage.setItem("pk.theme", pref);
-    applyTheme();
+    try {
+      if (pref === "system") localStorage.removeItem("pk-theme");
+      else localStorage.setItem("pk-theme", pref);
+    } catch (error) {
+      // Storage may be unavailable; the choice then lasts for this page only.
+    }
+    if (pref === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.dataset.theme = pref;
   }
 
-  darkQuery.addEventListener("change", applyTheme);
-  applyTheme();
+  function cycleTheme() {
+    const next = THEMES[(THEMES.indexOf(themePref()) + 1) % THEMES.length];
+    setTheme(next);
+    themeNoteTimer = Date.now() + 1500;
+    $("status-name").textContent = "Appearance: " + next[0].toUpperCase() + next.slice(1);
+    setTimeout(() => {
+      if (Date.now() >= themeNoteTimer) render();
+    }, 1500);
+  }
 
   // ---------- view toggles ----------
 
@@ -950,7 +968,7 @@
     } else {
       statusText.textContent = "No file";
     }
-    $("status-name").textContent = current ? (current.path || current.name) : "";
+    if (Date.now() >= themeNoteTimer) $("status-name").textContent = current ? (current.path || current.name) : "";
     $("m-name").textContent = current ? current.name : "No file";
     gauge.hidden = !state.busy;
     gaugeFill.style.width = Math.round(state.progress * 100) + "%";
@@ -1316,6 +1334,9 @@
       } else if (lower === "s") {
         event.preventDefault();
         download();
+      } else if (lower === "l" && event.shiftKey) {
+        event.preventDefault();
+        cycleTheme();
       } else if (key === "\\") {
         event.preventDefault();
         toggleFiles();
