@@ -2,7 +2,7 @@
   "name": "pixel-kit",
   "version": "0.1.0",
   "description": "Pixel-art tools: exact color replacement and nearest-neighbor scaling for PNG files.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "bin": {
     "pixel-kit": "bin/pixel-kit.js"
