@@ -542,7 +542,7 @@
           zip.file(item.file.path || item.file.name || "image", blob);
         }
         const zipped = await zip.generateAsync({ type: "blob" });
-        saveBlob(zipped, "pixel-scale.zip");
+        saveBlob(zipped, "pixel-kit.zip");
       } else {
         const item = job[0];
         activeId = item.file.id;
