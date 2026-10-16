@@ -113,3 +113,6 @@
     importMapping,
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);
+
+// Node (CLI and tests): export the same object.
+if (typeof module !== "undefined" && module.exports) module.exports = globalThis.PixelRecolor;

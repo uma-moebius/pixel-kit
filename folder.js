@@ -73,3 +73,6 @@
 
   root.PixelFolder = { isHidden, isSupported, cleanPath, readAll, collectEntries, collectFileList };
 })(typeof globalThis !== "undefined" ? globalThis : this);
+
+// Node (CLI and tests): export the same object.
+if (typeof module !== "undefined" && module.exports) module.exports = globalThis.PixelFolder;
