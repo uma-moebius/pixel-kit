@@ -5,112 +5,186 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pixel Kit</title>
   <link rel="icon" href="assets/slime.png">
+  <link rel="preload" href="assets/fonts/JetBrainsMono-subset.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app">
-    <section class="preview" id="preview">
-      <div class="preview-top">
-        <p class="brand">
-          <img src="assets/slime.png" alt="" width="32" height="32">
-          <span>Pixel Kit</span>
-        </p>
-        <label class="view">
-          <span id="view-value">1×</span>
-          <input id="view-range" type="range" min="0" max="18" step="1" value="9" aria-label="View" aria-valuetext="1×">
-        </label>
+  <div class="app" id="app">
+    <header class="bar">
+      <div class="bar-l">
+        <button type="button" class="mbtn burger" id="burger" aria-haspopup="menu" aria-expanded="false" aria-label="Menu">☰</button>
+        <div class="logo"><img src="assets/slime.png" alt="" width="22" height="22"><span>Pixel Kit</span></div>
+        <nav class="menus" id="menus" role="menubar" aria-label="Main">
+          <button type="button" class="mbtn" role="menuitem" aria-haspopup="menu" aria-expanded="false" data-menu="file">File</button>
+          <button type="button" class="mbtn" role="menuitem" aria-haspopup="menu" aria-expanded="false" data-menu="edit">Edit</button>
+          <button type="button" class="mbtn" role="menuitem" aria-haspopup="menu" aria-expanded="false" data-menu="view">View</button>
+        </nav>
+        <button type="button" class="mini files-toggle" id="files-open">Files <span class="mono" id="files-open-count">0</span></button>
       </div>
-      <div class="stage empty" id="stage">
-        <div class="stage-scroll">
+      <div class="tabs" id="tabs" role="tablist" aria-label="Mode"></div>
+      <div class="bar-r">
+        <div class="zoom" role="group" aria-label="Display zoom">
+          <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+          <span id="view-value" class="mono">1×</span>
+          <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+        </div>
+        <button type="button" class="primary" id="download" disabled><span id="download-label">Download</span> <small class="kbd-hint" data-shortcut="mod+S"></small></button>
+      </div>
+    </header>
+
+    <div class="body" id="body">
+      <aside class="pane left" id="files-pane" aria-label="Files">
+        <div class="ph">
+          <span>Files</span>
+          <span class="ph-r"><span class="count" id="file-count">0</span>
+            <button type="button" id="files-collapse" aria-label="Collapse files pane" title="Collapse">«</button></span>
+        </div>
+        <div class="tree" id="file-list" role="tree" aria-label="Files" tabindex="0"></div>
+        <div class="lf">
+          <button type="button" class="ghost" id="add-files">Add files</button>
+          <button type="button" class="ghost" id="add-folder">Add folder</button>
+        </div>
+      </aside>
+      <div class="scrim" id="scrim" hidden></div>
+
+      <main class="center" id="preview">
+        <div class="mtool">
+          <button type="button" class="mini" id="m-files">☰ Files <span id="m-files-count">0</span></button>
+          <span class="m-name mono" id="m-name"></span>
+          <button type="button" class="mini" id="m-zoom-out" aria-label="Zoom out">−</button>
+          <span class="mono" id="m-zoom">1×</span>
+          <button type="button" class="mini" id="m-zoom-in" aria-label="Zoom in">+</button>
+        </div>
+        <div class="stage" id="stage">
+          <div class="float" id="float" hidden>
+            <span class="chip" role="radiogroup" aria-label="Background">BG
+              <button type="button" class="sw checker" data-bg="checker" aria-label="Checker"></button>
+              <button type="button" class="sw" data-bg="white" style="background:#fff" aria-label="White"></button>
+              <button type="button" class="sw" data-bg="gray" style="background:#808080" aria-label="Gray"></button>
+              <button type="button" class="sw" data-bg="dark" style="background:#141018" aria-label="Dark"></button>
+            </span>
+            <button type="button" class="chip" id="grid-toggle" aria-pressed="false">Grid</button>
+            <button type="button" class="chip" id="compare-toggle" aria-pressed="false">Before / After</button>
+          </div>
+          <div class="view" id="view" hidden>
+            <figure class="fig" id="before-fig" hidden>
+              <div class="art" id="before-art"><img id="before-img" alt="Before"></div>
+              <figcaption>Before</figcaption>
+            </figure>
+            <figure class="fig">
+              <div class="art" id="after-art"><img id="preview-img" alt=""></div>
+              <figcaption id="after-cap" hidden></figcaption>
+            </figure>
+          </div>
           <div class="empty" id="empty">
-            <p class="drop-title">Drop images or folders here</p>
-            <p class="or">or</p>
-            <button type="button" class="choose" id="choose">Choose files</button>
-            <button type="button" class="choose-folder" id="choose-folder">Choose folder</button>
-            <p class="formats">PNG, JPEG, WebP, or GIF</p>
-          </div>
-          <div class="checker" id="checker" hidden>
-            <img id="preview-img" alt="">
-          </div>
-        </div>
-        <p class="size-label" id="size-label" hidden></p>
-        <div class="popup" id="popup" hidden>
-          <div class="popup-head">
-            <strong id="popup-name"></strong>
-            <button type="button" id="popup-close">Close</button>
-          </div>
-          <p id="popup-message"></p>
-        </div>
-        <div class="gauge" id="gauge" hidden>
-          <div id="gauge-fill"></div>
-        </div>
-      </div>
-    </section>
-    <aside class="settings">
-      <div>
-        <h2>Input</h2>
-        <p class="no-file" id="no-file">No file</p>
-        <div class="card" id="card" hidden>
-          <div class="thumb" id="thumb">
-            <img id="thumb-img" alt="" hidden>
-          </div>
-          <div class="card-text">
-            <p class="card-name" id="card-name"></p>
-            <p class="card-meta" id="card-meta"></p>
-          </div>
-          <button type="button" class="replace" id="replace">Replace</button>
-        </div>
-      </div>
-      <div>
-        <h2>Size</h2>
-        <div class="segment" role="group" aria-label="Size">
-          <button type="button" id="mode-scale" aria-pressed="true">Scale</button>
-          <button type="button" id="mode-pixels" aria-pressed="false">Pixels</button>
-        </div>
-        <label class="field" id="scale-field">
-          <span>×</span>
-          <input id="scale-input" inputmode="decimal" value="2" aria-label="Scale" autocomplete="off">
-        </label>
-        <div class="pixel-block" id="pixel-block" hidden>
-          <div class="pixel-row">
-            <div class="segment slim" role="group" aria-label="Edge">
-              <button type="button" id="edge-width" aria-pressed="true">Width</button>
-              <button type="button" id="edge-height" aria-pressed="false">Height</button>
+            <div>
+              <img src="assets/slime.png" alt="" width="48" height="48">
+              <h3>Drop images or folders</h3>
+              <p>PNG, JPEG, WebP, GIF — or a folder</p>
+              <div class="btns">
+                <button type="button" class="primary" id="choose">Open files…</button>
+                <button type="button" class="ghost" id="choose-folder">Open folder…</button>
+              </div>
+              <div class="k mono"><span data-shortcut="mod+O"></span> open · <span data-shortcut="shift+mod+O"></span> folder</div>
             </div>
-            <label class="field" id="pixel-field">
-              <span>px</span>
-              <input id="pixel-input" inputmode="decimal" aria-label="Width" autocomplete="off">
-            </label>
           </div>
-          <p class="derived" id="derived" hidden></p>
+          <div class="popup" id="popup" hidden>
+            <div class="popup-head">
+              <strong id="popup-name"></strong>
+              <button type="button" id="popup-close">Close</button>
+            </div>
+            <p id="popup-message"></p>
+          </div>
+          <div class="dropzone" id="dropzone" hidden><span id="dropzone-text">Drop to add</span></div>
         </div>
-      </div>
-      <div class="colors">
-        <div class="colors-head">
-          <h2>Colors</h2>
-          <div class="colors-actions">
-            <button type="button" id="colors-import">Import</button>
-            <button type="button" id="colors-export">Export</button>
-            <button type="button" id="colors-reset">Reset</button>
+        <div class="status mono" id="status">
+          <span id="status-text">No file</span>
+          <div class="gauge" id="gauge" hidden><div id="gauge-fill"></div></div>
+          <span class="sp"></span>
+          <span id="status-name"></span>
+        </div>
+      </main>
+
+      <aside class="pane right" id="inspector" aria-label="Inspector">
+        <button type="button" class="grab" id="grab" aria-label="Resize settings sheet"></button>
+        <div class="ph" id="inspector-title">Scale</div>
+        <div class="ins" id="inspector-panel" role="tabpanel">
+          <div data-mode="scale">
+            <div class="sec">
+              <div class="lbl">Size</div>
+              <div class="seg" role="group" aria-label="Size">
+                <button type="button" id="mode-scale" aria-pressed="true">Scale</button>
+                <button type="button" id="mode-pixels" aria-pressed="false">Pixels</button>
+              </div>
+              <label class="field" id="scale-field">
+                <span>×</span>
+                <input id="scale-input" inputmode="decimal" value="2" aria-label="Scale" autocomplete="off">
+              </label>
+              <div class="pixel-block" id="pixel-block" hidden>
+                <div class="seg slim" role="group" aria-label="Edge">
+                  <button type="button" id="edge-width" aria-pressed="true">Width</button>
+                  <button type="button" id="edge-height" aria-pressed="false">Height</button>
+                </div>
+                <label class="field" id="pixel-field">
+                  <span>px</span>
+                  <input id="pixel-input" inputmode="decimal" aria-label="Width" autocomplete="off">
+                </label>
+                <p class="derived mono" id="derived" hidden></p>
+              </div>
+              <div class="presets" id="presets" role="group" aria-label="Scale presets"></div>
+            </div>
+            <div class="sec selected-sec" id="selected-sec" hidden>
+              <div class="lbl">Selected file</div>
+              <div class="kv">
+                <span>Name</span><b id="sel-name"></b>
+                <span>Input</span><b id="sel-in"></b>
+                <span>Output</span><b id="sel-out"></b>
+                <span>Status</span><b id="sel-status"></b>
+              </div>
+              <div class="sec-actions"><button type="button" class="mini" id="replace">Replace…</button></div>
+            </div>
+          </div>
+          <div data-mode="colors" hidden>
+            <div class="sec">
+              <div class="lbl">Used colors <span class="lbl-r mono" id="colors-note">0</span></div>
+              <input class="search" id="color-filter" placeholder="Filter #hex" autocomplete="off" spellcheck="false" aria-label="Filter colors">
+              <div class="clist" id="color-list"></div>
+            </div>
+            <div class="sec">
+              <div class="lbl">Palette</div>
+              <div class="sec-actions">
+                <button type="button" class="mini" id="colors-import">Import…</button>
+                <button type="button" class="mini" id="colors-export">Export</button>
+                <button type="button" class="mini push" id="colors-reset">Reset</button>
+              </div>
+              <p class="note">Exact match only. Applies to all files.</p>
+            </div>
           </div>
         </div>
-        <p class="colors-note" id="colors-note">No colors</p>
-        <div class="color-list" id="color-list"></div>
-      </div>
-      <div class="files">
-        <h2>Files</h2>
-        <div class="file-list" id="file-list"></div>
-      </div>
-      <button type="button" class="download" id="download" disabled>Download PNG</button>
-    </aside>
+        <div class="out" id="output">
+          <div class="lbl">Output</div>
+          <div class="kv">
+            <span>Format</span><b id="out-format">—</b>
+            <span>Files</span><b id="out-files">—</b>
+            <span>Size</span><b id="out-size">—</b>
+          </div>
+          <button type="button" class="primary wide" id="download-2" disabled>Download</button>
+          <p class="note" id="out-note"></p>
+        </div>
+      </aside>
+    </div>
   </div>
+
+  <div class="drop" id="dropdown" role="menu" hidden></div>
+  <div class="drop ctx" id="file-menu" role="menu" hidden>
+    <button type="button" id="file-replace" role="menuitem"><span>Replace…</span><span></span></button>
+    <button type="button" id="file-delete" role="menuitem"><span>Delete</span><span>⌫</span></button>
+  </div>
+
   <input id="pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
   <input id="folder-pick" type="file" webkitdirectory multiple hidden>
   <input id="replace-pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" hidden>
   <input id="colors-pick" type="file" accept="application/json,.json" hidden>
-  <div class="menu" id="file-menu" hidden role="menu">
-    <button type="button" id="file-delete" role="menuitem">Delete</button>
-  </div>
   <script src="vendor/jszip.min.js"></script>
   <script src="scale.js"></script>
   <script src="recolor.js"></script>
