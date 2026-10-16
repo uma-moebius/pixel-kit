@@ -1,5 +1,7 @@
 (function () {
   const PS = globalThis.PixelScale;
+  const PR = globalThis.PixelRecolor;
+  const MAX_COLOR_ROWS = 512;
   const $ = (id) => document.getElementById(id);
 
   const preview = $("preview");
@@ -31,6 +33,8 @@
   const viewRange = $("view-range");
   const fileMenu = $("file-menu");
   const fileDelete = $("file-delete");
+  const colorList = $("color-list");
+  const colorsNote = $("colors-note");
 
   const state = {
     files: [],
@@ -44,7 +48,9 @@
     memoryId: null,
     busy: false,
     progress: 0,
+    mapping: {},
   };
+  let paletteSig = "";
   let seq = 0;
 
   function settings() {
@@ -102,12 +108,45 @@
       height: 0,
       readable: false,
       ready: !format,
+      pixels: null,
+      recolorKey: "",
+      recolorUrl: "",
     };
   }
 
   function release(entry) {
     if (entry.url) URL.revokeObjectURL(entry.url);
     if (entry.bitmap) entry.bitmap.close();
+  }
+
+  function readPixels(entry) {
+    const canvas = document.createElement("canvas");
+    canvas.width = entry.width;
+    canvas.height = entry.height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.imageSmoothingEnabled = false;
+    context.drawImage(entry.bitmap, 0, 0);
+    return context.getImageData(0, 0, entry.width, entry.height).data;
+  }
+
+  function hasMapping() {
+    return !PR.isEmpty(state.mapping);
+  }
+
+  // URL of the image as it should be shown: the original, or a recolored copy.
+  function displayUrl(entry) {
+    if (!hasMapping() || !entry.pixels) return entry.url;
+    const key = PR.mappingKey(state.mapping);
+    if (entry.recolorKey !== key) {
+      const canvas = document.createElement("canvas");
+      canvas.width = entry.width;
+      canvas.height = entry.height;
+      const data = PR.applyMapping(entry.pixels, state.mapping);
+      canvas.getContext("2d").putImageData(new ImageData(data, entry.width, entry.height), 0, 0);
+      entry.recolorUrl = canvas.toDataURL("image/png");
+      entry.recolorKey = key;
+    }
+    return entry.recolorUrl;
   }
 
   function prefillPixel(entry) {
@@ -135,6 +174,13 @@
       entry.width = bitmap.width;
       entry.height = bitmap.height;
       entry.readable = bitmap.width > 0 && bitmap.height > 0;
+      if (entry.readable) {
+        try {
+          entry.pixels = readPixels(entry);
+        } catch (error) {
+          entry.pixels = null;
+        }
+      }
     } catch (error) {
       if (!state.files.some((file) => file.id === id)) return;
       entry.readable = false;
@@ -231,7 +277,8 @@
     checker.hidden = !showImage;
     if (showImage && currentRow.width && currentRow.height) {
       const viewScale = PS.viewFactor(state.view);
-      previewImg.src = current.url;
+      const src = displayUrl(current);
+      if (previewImg.getAttribute("src") !== src) previewImg.src = src;
       previewImg.style.width = (currentRow.width * viewScale) + "px";
       previewImg.style.height = (currentRow.height * viewScale) + "px";
     }
@@ -266,7 +313,10 @@
       const showThumb = Boolean(showImage);
       thumb.classList.toggle("show", showThumb);
       thumbImg.hidden = !showThumb;
-      if (showThumb) thumbImg.src = current.url;
+      if (showThumb) {
+        const src = displayUrl(current);
+        if (thumbImg.getAttribute("src") !== src) thumbImg.src = src;
+      }
     }
 
     $("mode-scale").setAttribute("aria-pressed", state.mode === "scale" ? "true" : "false");
@@ -323,8 +373,95 @@
       fileList.append(button);
     });
 
+    renderColors();
+
     downloadBtn.textContent = action.label;
     downloadBtn.disabled = state.busy || !action.enabled;
+  }
+
+  function setTarget(from, to) {
+    const value = PR.normalizeHex(to);
+    if (!value) return false;
+    const next = { ...state.mapping };
+    if (value === from) delete next[from];
+    else next[from] = value;
+    state.mapping = next;
+    state.memoryId = null;
+    render();
+    return true;
+  }
+
+  function renderColors() {
+    const sources = state.files.filter((file) => file.pixels);
+    const colors = PR.extractColors(sources.map((file) => file.pixels));
+    const shown = colors.slice(0, MAX_COLOR_ROWS);
+    const sig = shown.map((c) => c.hex + ":" + c.count).join(",");
+    if (sig !== paletteSig) {
+      paletteSig = sig;
+      colorList.replaceChildren();
+      shown.forEach((color) => {
+        const row = document.createElement("div");
+        row.className = "color-row";
+        row.dataset.hex = color.hex;
+        const swatch = document.createElement("span");
+        swatch.className = "swatch";
+        swatch.style.background = color.hex;
+        const hex = document.createElement("span");
+        hex.className = "color-hex";
+        hex.textContent = color.hex;
+        const count = document.createElement("span");
+        count.className = "color-count";
+        count.textContent = PS.formatCount(color.count);
+        const arrow = document.createElement("span");
+        arrow.className = "color-arrow";
+        arrow.textContent = "\u2192";
+        const picker = document.createElement("input");
+        picker.type = "color";
+        picker.className = "color-pick";
+        picker.setAttribute("aria-label", "Target for " + color.hex);
+        const text = document.createElement("input");
+        text.className = "color-text";
+        text.autocomplete = "off";
+        text.spellcheck = false;
+        text.setAttribute("aria-label", "Target hex for " + color.hex);
+        picker.addEventListener("input", () => {
+          if (state.busy) return;
+          setTarget(color.hex, picker.value);
+        });
+        text.addEventListener("change", () => {
+          if (state.busy || !setTarget(color.hex, text.value)) {
+            text.value = state.mapping[color.hex] || color.hex;
+          }
+        });
+        text.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") text.blur();
+        });
+        row.append(swatch, hex, count, arrow, picker, text);
+        colorList.append(row);
+      });
+    }
+    colorList.querySelectorAll(".color-row").forEach((row) => {
+      const from = row.dataset.hex;
+      const target = state.mapping[from] || from;
+      const picker = row.querySelector(".color-pick");
+      const text = row.querySelector(".color-text");
+      if (picker.value !== target) picker.value = target;
+      if (document.activeElement !== text && text.value !== target) text.value = target;
+      row.classList.toggle("changed", Boolean(state.mapping[from]));
+    });
+    const changed = Object.keys(PR.cleanMapping(state.mapping)).length;
+    let note = "";
+    if (!colors.length) note = "No colors";
+    else {
+      note = PS.formatCount(colors.length) + (colors.length === 1 ? " color" : " colors");
+      if (changed) note += " \u00b7 " + changed + " changed";
+      if (colors.length > shown.length) note += " \u00b7 showing first " + MAX_COLOR_ROWS;
+    }
+    colorsNote.textContent = note;
+    colorList.hidden = !colors.length;
+    $("colors-reset").disabled = state.busy || !changed;
+    $("colors-export").disabled = state.busy || !changed;
+    $("colors-import").disabled = state.busy;
   }
 
   function saveBlob(blob, name) {
@@ -348,7 +485,8 @@
     const sourceContext = sourceCanvas.getContext("2d", { willReadFrequently: true });
     sourceContext.imageSmoothingEnabled = false;
     sourceContext.drawImage(entry.bitmap, 0, 0);
-    const source = sourceContext.getImageData(0, 0, entry.width, entry.height).data;
+    const raw = sourceContext.getImageData(0, 0, entry.width, entry.height).data;
+    const source = hasMapping() ? PR.applyMapping(raw, state.mapping) : raw;
     const destination = new Uint8ClampedArray(size.width * size.height * 4);
     const step = 48;
     for (let y = 0; y < size.height; y += step) {
@@ -507,6 +645,26 @@
     render();
   });
   downloadBtn.addEventListener("click", download);
+  $("colors-reset").addEventListener("click", () => {
+    if (state.busy) return;
+    state.mapping = {};
+    render();
+  });
+  $("colors-export").addEventListener("click", () => {
+    saveBlob(new Blob([PR.exportMapping(state.mapping)], { type: "application/json" }), "colors.json");
+  });
+  $("colors-import").addEventListener("click", () => $("colors-pick").click());
+  $("colors-pick").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    event.target.value = "";
+    if (!file || state.busy) return;
+    try {
+      state.mapping = PR.importMapping(await file.text());
+      render();
+    } catch (error) {
+      alert("Could not read this color mapping. Use JSON like {\"#ff0000\": \"#00ff00\"}.");
+    }
+  });
 
   document.addEventListener("dragover", (event) => {
     event.preventDefault();

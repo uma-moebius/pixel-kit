@@ -84,6 +84,18 @@
           <p class="derived" id="derived" hidden></p>
         </div>
       </div>
+      <div class="colors">
+        <div class="colors-head">
+          <h2>Colors</h2>
+          <div class="colors-actions">
+            <button type="button" id="colors-import">Import</button>
+            <button type="button" id="colors-export">Export</button>
+            <button type="button" id="colors-reset">Reset</button>
+          </div>
+        </div>
+        <p class="colors-note" id="colors-note">No colors</p>
+        <div class="color-list" id="color-list"></div>
+      </div>
       <div class="files">
         <h2>Files</h2>
         <div class="file-list" id="file-list"></div>
@@ -93,11 +105,13 @@
   </div>
   <input id="pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
   <input id="replace-pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" hidden>
+  <input id="colors-pick" type="file" accept="application/json,.json" hidden>
   <div class="menu" id="file-menu" hidden role="menu">
     <button type="button" id="file-delete" role="menuitem">Delete</button>
   </div>
   <script src="vendor/jszip.min.js"></script>
   <script src="scale.js"></script>
+  <script src="recolor.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
