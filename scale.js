@@ -103,7 +103,7 @@
     const claimed = new Set();
     for (let i = 0; i < results.length; i++) {
       if (results[i].status !== "pass") continue;
-      const name = files[i].name;
+      const name = files[i].path || files[i].name;
       if (claimed.has(name)) {
         results[i] = {
           status: "duplicate",

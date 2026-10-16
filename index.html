@@ -23,10 +23,11 @@
       <div class="stage empty" id="stage">
         <div class="stage-scroll">
           <div class="empty" id="empty">
-            <p class="drop-title">Drop an image here</p>
+            <p class="drop-title">Drop images or folders here</p>
             <p class="or">or</p>
-            <button type="button" class="choose" id="choose">Choose file</button>
-            <p class="formats">One PNG, JPEG, WebP, or GIF</p>
+            <button type="button" class="choose" id="choose">Choose files</button>
+            <button type="button" class="choose-folder" id="choose-folder">Choose folder</button>
+            <p class="formats">PNG, JPEG, WebP, or GIF</p>
           </div>
           <div class="checker" id="checker" hidden>
             <img id="preview-img" alt="">
@@ -104,6 +105,7 @@
     </aside>
   </div>
   <input id="pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+  <input id="folder-pick" type="file" webkitdirectory multiple hidden>
   <input id="replace-pick" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" hidden>
   <input id="colors-pick" type="file" accept="application/json,.json" hidden>
   <div class="menu" id="file-menu" hidden role="menu">
@@ -112,6 +114,7 @@
   <script src="vendor/jszip.min.js"></script>
   <script src="scale.js"></script>
   <script src="recolor.js"></script>
+  <script src="folder.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

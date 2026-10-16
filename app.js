@@ -1,6 +1,7 @@
 (function () {
   const PS = globalThis.PixelScale;
   const PR = globalThis.PixelRecolor;
+  const PF = globalThis.PixelFolder;
   const MAX_COLOR_ROWS = 512;
   const $ = (id) => document.getElementById(id);
 
@@ -95,12 +96,13 @@
     return null;
   }
 
-  function makeEntry(file) {
+  function makeEntry(file, path) {
     const format = detectFormat(file);
     return {
       id: ++seq,
       file,
       name: file.name || "image",
+      path: path && path.includes("/") ? path : "",
       format,
       url: format ? URL.createObjectURL(file) : "",
       bitmap: null,
@@ -190,21 +192,22 @@
     render();
   }
 
+  // list: Files, or { file, path } items from a folder.
   function addFiles(list, replace) {
-    const incoming = [...list];
+    const incoming = [...list].map((item) => (item instanceof Blob ? { file: item, path: "" } : item));
     if (!incoming.length || state.busy) return;
     state.memoryId = null;
     state.dismissed = "";
     if (replace) {
       const index = state.files.findIndex((file) => file.id === state.selectedId);
       if (index < 0) return;
-      const created = makeEntry(incoming[0]);
+      const created = makeEntry(incoming[0].file, "");
       release(state.files[index]);
       state.files[index] = created;
       state.selectedId = created.id;
       if (created.format) decode(created);
     } else {
-      const created = incoming.map(makeEntry);
+      const created = incoming.map((item) => makeEntry(item.file, item.path));
       state.files.push(...created);
       state.selectedId = created[0].id;
       created.forEach((entry) => {
@@ -355,7 +358,7 @@
       dot.className = "dot " + row.status;
       const name = document.createElement("span");
       name.className = "row-name";
-      name.textContent = file.name;
+      name.textContent = file.path || file.name;
       const size = document.createElement("span");
       size.className = "row-size" + (row.status === "pass" ? "" : " none");
       size.textContent = row.status === "pass" ? PS.formatPair(row.width, row.height, false) : "\u2014";
@@ -536,8 +539,7 @@
             state.progress = (i + progress) / passing.length;
             gaugeFill.style.width = Math.round(state.progress * 100) + "%";
           });
-          const parts = item.file.name.split(/[\\/]/);
-          zip.file(parts[parts.length - 1] || "image", blob);
+          zip.file(item.file.path || item.file.name || "image", blob);
         }
         const zipped = await zip.generateAsync({ type: "blob" });
         saveBlob(zipped, "pixel-scale.zip");
@@ -564,6 +566,11 @@
   }
 
   $("choose").addEventListener("click", () => $("pick").click());
+  $("choose-folder").addEventListener("click", () => $("folder-pick").click());
+  $("folder-pick").addEventListener("change", (event) => {
+    addFiles(PF.collectFileList(event.target.files), false);
+    event.target.value = "";
+  });
   $("replace").addEventListener("click", () => $("replace-pick").click());
   $("pick").addEventListener("change", (event) => {
     addFiles(event.target.files, false);
@@ -676,7 +683,14 @@
   document.addEventListener("drop", (event) => {
     event.preventDefault();
     stage.classList.remove("drag");
-    if (preview.contains(event.target)) addFiles(event.dataTransfer.files, false);
+    if (!preview.contains(event.target)) return;
+    const items = [...(event.dataTransfer.items || [])];
+    const entries = items.map((item) => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null));
+    if (entries.length && entries.every(Boolean) && entries.some((entry) => entry.isDirectory)) {
+      PF.collectEntries(entries).then((found) => addFiles(found, false));
+    } else {
+      addFiles(event.dataTransfer.files, false);
+    }
   });
 
   render();
