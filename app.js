@@ -470,6 +470,9 @@
         { label: "Pixel grid", key: "G", check: state.grid, run: toggleGrid },
         { label: "Before/After", key: "B", check: state.compare, run: toggleCompare },
         { label: "Toggle files pane", key: IS_MAC ? "\u2318\\" : "Ctrl+\\", run: toggleFiles },
+        "-",
+        { group: "Theme" },
+        ...THEMES.map((id) => ({ label: "Theme: " + id[0].toUpperCase() + id.slice(1), check: themePref() === id, run: () => setTheme(id) })),
       ];
     }
     if (name === "all") {
@@ -683,6 +686,30 @@
     $("colors-export").disabled = state.busy || !changed;
     $("colors-import").disabled = state.busy;
   }
+
+  // ---------- theme ----------
+
+  const THEMES = ["system", "light", "dark"];
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function themePref() {
+    const value = localStorage.getItem("pk.theme");
+    return THEMES.includes(value) ? value : "system";
+  }
+
+  function applyTheme() {
+    const pref = themePref();
+    const dark = pref === "dark" || (pref === "system" && darkQuery.matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  }
+
+  function setTheme(pref) {
+    localStorage.setItem("pk.theme", pref);
+    applyTheme();
+  }
+
+  darkQuery.addEventListener("change", applyTheme);
+  applyTheme();
 
   // ---------- view toggles ----------
 
