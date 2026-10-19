@@ -8,7 +8,7 @@
 
 :root {
   /*
-   * Theme tokens (values from Muse's THEME.md). Every UI color lives here.
+   * Theme tokens. Every UI color lives here.
    * New features must use these tokens only — never raw hex/rgba in rules,
    * inline styles, or JS. Add a missing token as --{role}-{kind} and give it
    * BOTH a light and a dark value. --text-faint goes on panel surfaces only.

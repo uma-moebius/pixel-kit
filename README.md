@@ -2,7 +2,7 @@
 
 Scale pixel art without blurring it, and replace colors in bulk.
 
-https://yumatanemura.com/pixel-kit/
+https://uma-moebius.github.io/pixel-kit/
 
 ![Pixel Kit](assets/screenshot.png)
 
